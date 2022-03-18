@@ -4,16 +4,9 @@
 </style>
 </head>
 <body>
-<div style="text-align:center; width:100%">
+<div id="mainDiv" style="text-align:center; width:100%">
   <div style="height:500px;width:1000px;margin:auto;padding-top:100px;">
   <svg id='mainCanvas' height="500" width="800">
-    <g id='test1'>
-    <rect x="20", y="120", width="100" height="100" style="fill:rgb(255,255,255);stroke-width:2;stroke:rgb(0,0,0)" />
-    <text x="70" y="170" dominant-baseline="middle" text-anchor="middle">TEXT</text>
-    </g>
-    <g id='test2'>
-    <rect x="150", y="120", width="100" height="100" style="fill:rgb(255,255,255);stroke-width:2;stroke:rgb(0,0,0)" />
-    </g>
   </svg>
   </div>
 </div>
@@ -36,6 +29,7 @@
     const gapRatio = 0.3;
     // The border of elemnt box
     const numberBoxBorderWidth = 2;
+    const numberBoxAnchorY = 120;
     // The gap also applies in the front and at the end of the boxes within the canvas.
     // So let numberBoxWidth=x, then num_boxes * x + 0.3 * (num_boxes + 1) * x = canvas_width.
     // Therefore we have, (1.3 * num_boxes + 0.3) * x = canvas_width => x = canvas_width/(1.3 * num_boxes + 0.3)
@@ -43,75 +37,124 @@
     return {
       numberBoxWidth: numberBoxWidth,
       numberBoxGap: Math.round(numberBoxWidth * gapRatio),
-      numberBoxBorderWidth: numberBoxBorderWidth
+      numberBoxBorderWidth: numberBoxBorderWidth,
+      numberBoxAnchorY: numberBoxAnchorY,
+      numberFontSize: Math.round(numberBoxWidth/2).toString() + "px",
+
     };
   })(parseInt(document.getElementById("mainCanvas").getAttribute("width")));
+  const ANIMATE_CONFIG = (function(){
+    // duration of swapping
+    const swapDuration = 1000;
+    return {
+      swapDuration: swapDuration,
+      swapDX: LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap,
+      swapDY: (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap) / 2
+    };
+  })();
   console.log(LAYOUT_CONFIG);
+  console.log(ANIMATE_CONFIG);
   /**
-   * ElementToSort class.
+   * NumberBoxToSort class.
    *
    * @constructor
-   * @param {String} svgNode - Dom node to represent the element to sort. Should be a <g> node.
+   * @param {String} svgNode - Dom node to represent the number box to sort. Should be a <g> node.
    * @param {Number} value  - Value in this node.
    */
-  class ElementToSort {
+  class NumberBoxToSort {
     constructor(svgNode, value) {
       this.svgNode = svgNode;
       this.value = value;
     }
   }
 
-  // Init the svg canvas by drawing boxes of elements in NUM_VALUE_ARRAY
-  // @param {String} svgId - the id of svg node
-  // return an array of ElementToSort
-  function initSVG(svgId){
-
+  function getSVGElement(tag, attrs) {
+    var el= document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (var k in attrs)
+        el.setAttribute(k, attrs[k]);
+    return el;
   }
 
-  function swapNeighbor(eleLeft, eleRight, dx, dy, duration){
+  // Init the svg canvas by drawing boxes of elements in NUM_VALUE_ARRAY
+  // @param {String} svgId - the id of svg node
+  // return an array of NumberBoxToSort
+  function initSVG(svgId){
+    numberBoxToSort_arr = []
+    NUM_VALUE_ARRAY.forEach(function (value, index) {
+      newGroup = getSVGElement("g", {id: 'number-box-g-' + index.toString()});
+      newRect = getSVGElement("rect", {
+          x: LAYOUT_CONFIG.numberBoxGap + index * (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap),
+          y: LAYOUT_CONFIG.numberBoxAnchorY,
+          width: LAYOUT_CONFIG.numberBoxWidth,
+          height: LAYOUT_CONFIG.numberBoxWidth,
+          style: "fill:rgb(255,255,255);stroke-width:" + LAYOUT_CONFIG.numberBoxBorderWidth.toString() + ";stroke:rgb(0,0,0)"
+      });
+      newTxt = getSVGElement("text", {
+        x: parseInt(newRect.getAttribute('x')) + LAYOUT_CONFIG.numberBoxWidth / 2,
+        y: parseInt(newRect.getAttribute('y')) + LAYOUT_CONFIG.numberBoxWidth / 2,
+        "font-size": LAYOUT_CONFIG.numberFontSize,
+        "dominant-baseline": "middle",
+        "text-anchor": "middle"
+      });
+      newTxt.innerHTML = value.toString();
+      newGroup.appendChild(newRect);
+      newGroup.appendChild(newTxt);
+      document.getElementById(svgId).appendChild(newGroup);
+      numberBoxToSort_arr.push(new NumberBoxToSort(newGroup, value));
+    });
+    return numberBoxToSort_arr;
+  }
+  NUMBER_BOX_ARR = initSVG("mainCanvas");
+  console.log(NUMBER_BOX_ARR);
+  
+  function swapNeighbor(gidLeft, gidRight, dx, dy, duration){
+    const dxs = dx.toString();
+    const dys = dy.toString();
     const positionLeft = [
       {
         x: '+=0',
-        y: '-='+dy.toString(),
+        y: '-='+dys,
       },
       {
-        x: '+='+dx.toString(),
+        x: '+='+dxs,
         y: '+=0',
       },
       {
         x: '-=0',
-        y: '+='+dy.toString(),
+        y: '+='+dys,
       }
     ];
     const positionRight = [
       {
         x: '+=0',
-        y: '+='+dy.toString(),
+        y: '+='+dys,
       },
       {
-        x: '-='+dx.toString(),
+        x: '-='+dxs,
         y: '+=0',
       },
       {
         x: '-=0',
-        y: '-='+dy.toString(),
+        y: '-='+dys,
       }
     ];
     anime({
-      targets: eleLeft,
+      targets: gidLeft,
       easing: 'easeInOutSine',
       translateX: positionLeft.map(p => ({value: p.x, duration})),
       translateY: positionLeft.map(p => ({value: p.y, duration})),
     });
     anime({
-      targets: eleRight,
+      targets: gidRight,
       easing: 'easeInOutSine',
       translateX: positionRight.map(p => ({value: p.x, duration})),
       translateY: positionRight.map(p => ({value: p.y, duration})),
     });
   }
-  
-  swapNeighbor("#test1", "#test2", 130, 60, 1000);
+  swapNeighbor(
+    "#" + NUMBER_BOX_ARR[0].svgNode.getAttribute("id"),
+    "#" + NUMBER_BOX_ARR[1].svgNode.getAttribute("id"),
+    ANIMATE_CONFIG.swapDX, ANIMATE_CONFIG.swapDY, ANIMATE_CONFIG.swapDuration);
   
 </script>
 </body>
