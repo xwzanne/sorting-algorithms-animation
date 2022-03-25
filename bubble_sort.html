@@ -10,11 +10,11 @@
   </svg>
   </div>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/2.0.2/anime.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 <script>
   // The number array to be sorted.
   // Please change it here if you want to animate the sorting of another array.
-  const NUM_VALUE_ARRAY = [6, 5, 3, 2, 8, 1];
+  const NUM_VALUE_ARRAY = [6, 5, 3, 2, 8, 12, 0];
 
   // Config of the layout
   // @param {Number} canvasWidth - the width of the svg canvas
@@ -107,6 +107,13 @@
   NUMBER_BOX_ARR = initSVG("mainCanvas");
   console.log(NUMBER_BOX_ARR);
   
+  // swap 2 number box
+  // @param {String} gidLeft - the id of g node on the left
+  // @param {String} gidRight - the id of g node on the right
+  // @param {int} dx - the delta to move on x direction
+  // @param {int} dy - the delta to move on y direction
+  // @param {int} duration - the duration of the animation
+  // return an array of NumberBoxToSort
   function swapNeighbor(gidLeft, gidRight, dx, dy, duration){
     const dxs = dx.toString();
     const dys = dy.toString();
@@ -138,23 +145,42 @@
         y: '-='+dys,
       }
     ];
-    anime({
+    return [{
       targets: gidLeft,
       easing: 'easeInOutSine',
       translateX: positionLeft.map(p => ({value: p.x, duration})),
       translateY: positionLeft.map(p => ({value: p.y, duration})),
-    });
-    anime({
+    },
+    {
       targets: gidRight,
       easing: 'easeInOutSine',
       translateX: positionRight.map(p => ({value: p.x, duration})),
       translateY: positionRight.map(p => ({value: p.y, duration})),
-    });
+    }];
   }
   swapNeighbor(
     "#" + NUMBER_BOX_ARR[0].svgNode.getAttribute("id"),
     "#" + NUMBER_BOX_ARR[1].svgNode.getAttribute("id"),
     ANIMATE_CONFIG.swapDX, ANIMATE_CONFIG.swapDY, ANIMATE_CONFIG.swapDuration);
+  
+  // Run the bubble sort algo on 'NUMBER_BOX_ARR'
+  var TIME_LINE = anime.timeline();
+  let offsetStr = '-='+(ANIMATE_CONFIG.swapDuration*3).toString();
+  console.log(offsetStr);
+  for (let i = NUMBER_BOX_ARR.length-1; i>0; i--){
+    for (let j = 0; j < i; j++){
+      if(NUMBER_BOX_ARR[j].value > NUMBER_BOX_ARR[j+1].value){
+        [animation_left, animation_right] = swapNeighbor(
+          "#" + NUMBER_BOX_ARR[j].svgNode.getAttribute("id"),
+          "#" + NUMBER_BOX_ARR[j+1].svgNode.getAttribute("id"),
+          ANIMATE_CONFIG.swapDX, ANIMATE_CONFIG.swapDY, ANIMATE_CONFIG.swapDuration);
+        const numBoxTmp = NUMBER_BOX_ARR[j];
+        NUMBER_BOX_ARR[j] = NUMBER_BOX_ARR[j+1];
+        NUMBER_BOX_ARR[j+1] = numBoxTmp;
+        TIME_LINE = TIME_LINE.add(animation_left).add(animation_right, offsetStr);
+      }
+    }
+  }
   
 </script>
 </body>
