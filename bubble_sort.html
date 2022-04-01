@@ -7,6 +7,7 @@
 <div id="mainDiv" style="text-align:center; width:100%">
   <div style="height:500px;width:1000px;margin:auto;padding-top:100px;">
   <svg id='mainCanvas' height="500" width="800">
+    <!--<image width="200" height="200" href="./green_check.svg"></image>-->
   </svg>
   </div>
 </div>
@@ -14,7 +15,7 @@
 <script>
   // The number array to be sorted.
   // Please change it here if you want to animate the sorting of another array.
-  const NUM_VALUE_ARRAY = [6, 5, 3, 2, 8, 12, 0];
+  const NUM_VALUE_ARRAY = [4, 5, 3, 2, 8, 12, 0];
 
   // Config of the layout
   // @param {Number} canvasWidth - the width of the svg canvas
@@ -40,12 +41,12 @@
       numberBoxBorderWidth: numberBoxBorderWidth,
       numberBoxAnchorY: numberBoxAnchorY,
       numberFontSize: Math.round(numberBoxWidth/2).toString() + "px",
-
     };
   })(parseInt(document.getElementById("mainCanvas").getAttribute("width")));
   const ANIMATE_CONFIG = (function(){
     // duration of swapping
     const swapDuration = 1000;
+    const borderDuration = 2000;
     return {
       swapDuration: swapDuration,
       swapDX: LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap,
@@ -58,11 +59,13 @@
    * NumberBoxToSort class.
    *
    * @constructor
+   * @param {Number} idx - The original index in the array.
    * @param {String} svgNode - Dom node to represent the number box to sort. Should be a <g> node.
    * @param {Number} value  - Value in this node.
    */
   class NumberBoxToSort {
-    constructor(svgNode, value) {
+    constructor(idx, svgNode, value) {
+      this.idx = parseInt(idx);
       this.svgNode = svgNode;
       this.value = value;
     }
@@ -75,6 +78,10 @@
     return el;
   }
 
+  function getRectId(id){
+    return 'number-rect-' + id.toString();
+  }
+
   // Init the svg canvas by drawing boxes of elements in NUM_VALUE_ARRAY
   // @param {String} svgId - the id of svg node
   // return an array of NumberBoxToSort
@@ -83,6 +90,7 @@
     NUM_VALUE_ARRAY.forEach(function (value, index) {
       newGroup = getSVGElement("g", {id: 'number-box-g-' + index.toString()});
       newRect = getSVGElement("rect", {
+          id: getRectId(index.toString()),
           x: LAYOUT_CONFIG.numberBoxGap + index * (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap),
           y: LAYOUT_CONFIG.numberBoxAnchorY,
           width: LAYOUT_CONFIG.numberBoxWidth,
@@ -100,7 +108,7 @@
       newGroup.appendChild(newRect);
       newGroup.appendChild(newTxt);
       document.getElementById(svgId).appendChild(newGroup);
-      numberBoxToSort_arr.push(new NumberBoxToSort(newGroup, value));
+      numberBoxToSort_arr.push(new NumberBoxToSort(index, newGroup, value));
     });
     return numberBoxToSort_arr;
   }
@@ -158,26 +166,43 @@
       translateY: positionRight.map(p => ({value: p.y, duration})),
     }];
   }
-  swapNeighbor(
-    "#" + NUMBER_BOX_ARR[0].svgNode.getAttribute("id"),
-    "#" + NUMBER_BOX_ARR[1].svgNode.getAttribute("id"),
-    ANIMATE_CONFIG.swapDX, ANIMATE_CONFIG.swapDY, ANIMATE_CONFIG.swapDuration);
   
-  // Run the bubble sort algo on 'NUMBER_BOX_ARR'
+  function compareNeighbor(rectIdLeft, rectIdRight, is_red){
+    var target_color = "#181";
+    if(is_red){
+      target_color = "#FF0000"
+    }
+    return [
+      {
+      targets:[rectIdLeft, rectIdRight],
+      stroke: target_color,
+      duration: ANIMATE_CONFIG.borderDuration
+    },
+    {
+      targets:[rectIdLeft, rectIdRight],
+      stroke: "#000000",
+      duration: ANIMATE_CONFIG.borderDuration
+    }];
+  }
+
+  // Run the bubble sort algo on 'NUMBER_BOX_ARR', adding timeline accordingly
   var TIME_LINE = anime.timeline();
   let offsetStr = '-='+(ANIMATE_CONFIG.swapDuration*3).toString();
-  console.log(offsetStr);
   for (let i = NUMBER_BOX_ARR.length-1; i>0; i--){
     for (let j = 0; j < i; j++){
+      [rectAnimation_1, rectAnimation_2] = compareNeighbor("#"+getRectId(NUMBER_BOX_ARR[j].idx),
+        "#"+getRectId(NUMBER_BOX_ARR[j+1].idx),
+        NUMBER_BOX_ARR[j].value > NUMBER_BOX_ARR[j+1].value);
+        TIME_LINE = TIME_LINE.add(rectAnimation_1).add(rectAnimation_2);
       if(NUMBER_BOX_ARR[j].value > NUMBER_BOX_ARR[j+1].value){
-        [animation_left, animation_right] = swapNeighbor(
+        [swapAnimationLeft, swapAnimationRight] = swapNeighbor(
           "#" + NUMBER_BOX_ARR[j].svgNode.getAttribute("id"),
           "#" + NUMBER_BOX_ARR[j+1].svgNode.getAttribute("id"),
           ANIMATE_CONFIG.swapDX, ANIMATE_CONFIG.swapDY, ANIMATE_CONFIG.swapDuration);
         const numBoxTmp = NUMBER_BOX_ARR[j];
         NUMBER_BOX_ARR[j] = NUMBER_BOX_ARR[j+1];
         NUMBER_BOX_ARR[j+1] = numBoxTmp;
-        TIME_LINE = TIME_LINE.add(animation_left).add(animation_right, offsetStr);
+        TIME_LINE = TIME_LINE.add(swapAnimationLeft).add(swapAnimationRight, offsetStr);
       }
     }
   }
