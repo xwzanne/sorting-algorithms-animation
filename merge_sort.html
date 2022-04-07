@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+</style>
+</head>
+<body>
+<div id="mainDiv" style="text-align:center; width:100%">
+  <div style="height:500px;width:1000px;margin:auto;padding-top:100px;">
+  <svg id='mainCanvas' height="500" width="800">
+  </svg>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<script>
+    // The number array to be sorted.
+    // Please change it here if you want to animate the sorting of another array.
+    const NUM_VALUE_ARRAY = [4, 5, 3, 2, 8, 12, 0];
+
+    //
+    // 1. Clear the "Sort" text rendered in animateDivide from last parent call, if any.
+    // 2. Fill background color of the range [lI, rI), indicating we are sorting this range.
+    //    Persist for a while.
+    // 3. Clear this animation.
+    //
+    function animateSorting(lI, rI){
+
+    }
+    
+    //
+    // 1. Draw a divide line in the position of mid
+    // 2. Draw a "Sort" text above number box, in the range [lI, mid) and [mid, rI), respectively
+    //
+    function animateDivide(lI, mid, rI){
+
+    }
+
+    //
+    // 1. Clear the divide line rendered in animateDivide from the same call
+    // 2. Draw a "merge" at position mid, above the number box, point 2 arrow to the left and right range
+    // 3. Clear the merge text and arrow in step 2
+    // 4. Render the merge. Put left and right range in parallel, merge them 1 by 1 by putting the smallest
+    //    of each range into the original slot.
+    function animateMerge(lI, mid, rI){
+
+    }
+
+    // @param {number} lI - left index of the element in sorting array.
+    // @param {number} rI - right index of the element in sorting array.
+    function mergeSort(lI, rI){
+        if (rI - lI <= 1){
+            return;
+        }
+        const mid = Math.floor((lI + rI)/2);
+        animateSorting(lI, rI);
+        animateDivide(lI, mid, rI);
+        mergeSort(lI, mid);
+        mergeSort(mid, rI);
+        animateMerge(lI, mid, rI);
+    }
+  
+</script>
+</body>
+</html>
