@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-</style>
+  <script src="./util.js"></script> 
 </head>
 <body>
 <div id="mainDiv" style="text-align:center; width:100%">
@@ -55,32 +55,7 @@
   })();
   console.log(LAYOUT_CONFIG);
   console.log(ANIMATE_CONFIG);
-  /**
-   * NumberBoxToSort class.
-   *
-   * @constructor
-   * @param {Number} idx - The original index in the array.
-   * @param {String} svgNode - Dom node to represent the number box to sort. Should be a <g> node.
-   * @param {Number} value  - Value in this node.
-   */
-  class NumberBoxToSort {
-    constructor(idx, svgNode, value) {
-      this.idx = parseInt(idx);
-      this.svgNode = svgNode;
-      this.value = value;
-    }
-  }
 
-  function getSVGElement(tag, attrs) {
-    var el= document.createElementNS('http://www.w3.org/2000/svg', tag);
-    for (var k in attrs)
-        el.setAttribute(k, attrs[k]);
-    return el;
-  }
-
-  function getRectId(id){
-    return 'number-rect-' + id.toString();
-  }
 
   // Init the svg canvas by drawing boxes of elements in NUM_VALUE_ARRAY
   // @param {String} svgId - the id of svg node

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-</style>
+    <script src="./util.js"></script> 
 </head>
 <body>
 <div id="mainDiv" style="text-align:center; width:100%">
@@ -12,9 +12,84 @@
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 <script>
+    // Run the bubble sort algo on 'NUMBER_BOX_ARR', adding timeline accordingly
+    var TIME_LINE = anime.timeline();
+    const SVG_ID = "mainCanvas";
     // The number array to be sorted.
     // Please change it here if you want to animate the sorting of another array.
     const NUM_VALUE_ARRAY = [4, 5, 3, 2, 8, 12, 0];
+
+    // Config of the layout
+    // @param {Number} canvasWidth - the width of the svg canvas
+    // @return
+    //  object {
+    //    numberBoxWidth: the width of the rectangle boxes holding the number
+    //    numberBoxGap: the gap between the rectangle boxes holding the number
+    //    numberBoxBorderWidth: the border width of the box
+    //  }
+    const LAYOUT_CONFIG = (function(canvasWidth){
+        // The ratio of numberBoxGap:numberBoxWidth
+        const gapRatio = 0.3;
+        // The border of elemnt box
+        const numberBoxBorderWidth = 2;
+        const numberBoxAnchorY = 120;
+        const sortCmdAnchorY = 40;
+        // The gap also applies in the front and at the end of the boxes within the canvas.
+        // So let numberBoxWidth=x, then num_boxes * x + 0.3 * (num_boxes + 1) * x = canvas_width.
+        // Therefore we have, (1.3 * num_boxes + 0.3) * x = canvas_width => x = canvas_width/(1.3 * num_boxes + 0.3)
+        const numberBoxWidth = Math.round(canvasWidth / ((1 + gapRatio) * NUM_VALUE_ARRAY.length + gapRatio));
+        return {
+            numberBoxWidth: numberBoxWidth,
+            numberBoxGap: Math.round(numberBoxWidth * gapRatio),
+            numberBoxBorderWidth: numberBoxBorderWidth,
+            numberBoxAnchorY: numberBoxAnchorY,
+            numberFontSize: Math.round(numberBoxWidth/2).toString() + "px",
+            sortCmdFontSize: Math.round(numberBoxWidth/3).toString() + "px",
+            sortCmdAnchorY: sortCmdAnchorY
+        };
+    })(parseInt(document.getElementById("mainCanvas").getAttribute("width")));
+
+    const ANIMATE_CONFIG = (function(){
+        // for divide line
+        const divideLineLength = document.getElementById(SVG_ID).getAttribute("height");
+        return {
+            divideLineLength: divideLineLength,
+            drawDivideLineDuration: 2000,
+            drawSortCmdDuration: 500
+        };
+    })();
+    // Init the svg canvas by drawing boxes of elements in NUM_VALUE_ARRAY
+    // @param {String} svgId - the id of svg node
+    // return an array of NumberBoxToSort
+    function initSVG(svgId){
+        numberBoxToSort_arr = []
+        NUM_VALUE_ARRAY.forEach(function (value, index) {
+            newGroup = getSVGElement("g", {id: 'number-box-g-' + index.toString()});
+            newRect = getSVGElement("rect", {
+                id: getRectId(index.toString()),
+                x: LAYOUT_CONFIG.numberBoxGap + index * (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap),
+                y: LAYOUT_CONFIG.numberBoxAnchorY,
+                width: LAYOUT_CONFIG.numberBoxWidth,
+                height: LAYOUT_CONFIG.numberBoxWidth,
+                style: "fill:rgb(255,255,255);stroke-width:" + LAYOUT_CONFIG.numberBoxBorderWidth.toString() + ";stroke:rgb(0,0,0)"
+            });
+            newTxt = getSVGElement("text", {
+                x: parseInt(newRect.getAttribute('x')) + LAYOUT_CONFIG.numberBoxWidth / 2,
+                y: parseInt(newRect.getAttribute('y')) + LAYOUT_CONFIG.numberBoxWidth / 2,
+                "font-size": LAYOUT_CONFIG.numberFontSize,
+                "dominant-baseline": "middle",
+                "text-anchor": "middle"
+            });
+            newTxt.innerHTML = value.toString();
+            newGroup.appendChild(newRect);
+            newGroup.appendChild(newTxt);
+            document.getElementById(svgId).appendChild(newGroup);
+            numberBoxToSort_arr.push(new NumberBoxToSort(index, newGroup, value));
+        });
+        return numberBoxToSort_arr;
+    }
+    NUMBER_BOX_ARR = initSVG("mainCanvas");
+
 
     //
     // 1. Clear the "Sort" text rendered in animateDivide from last parent call, if any.
@@ -31,8 +106,54 @@
     // 2. Draw a "Sort" text above number box, in the range [lI, mid) and [mid, rI), respectively
     //
     function animateDivide(lI, mid, rI){
+        const linePosX = LAYOUT_CONFIG.numberBoxGap/2 + mid * (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap);
+        const rangeLeft = LAYOUT_CONFIG.numberBoxGap/2 + lI * (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap);
+        const rangeRight = LAYOUT_CONFIG.numberBoxGap/2 + rI * (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap);
+        // divide line
+        newDivideLine = getSVGElement("line", {
+            id: getDivideLineId(mid.toString()),
+            x1: linePosX,
+            x2: linePosX,
+            y1: 0,
+            y2: 0,
+            stroke: "#D68910",
+            "stroke-width": 4,
+            "stroke-dasharray": 4
+        });
+        document.getElementById(SVG_ID).appendChild(newDivideLine);
+        drawLineAnimation = {
+            targets:"#"+getDivideLineId(mid.toString()),
+            y2: ANIMATE_CONFIG.divideLineLength,
+            duration: ANIMATE_CONFIG.drawDivideLineDuration,
+            easing: "easeInCubic"
+        };
+        TIME_LINE = TIME_LINE.add(drawLineAnimation);
 
+        // Sort command. Left and Right respectively
+        [[lI, mid, rangeLeft], [mid, rI, rangeRight]].forEach(function(value, index){
+            [indLeft, indRight, rangePos] = value;
+            sortCmd = getSVGElement("text", {
+                id: getSortTextId(indLeft, indRight), 
+                x: (rangePos + linePosX)/2,
+                y: LAYOUT_CONFIG.sortCmdAnchorY,
+                style: "fill:#D68910",
+                opacity: 0,
+                "font-size": LAYOUT_CONFIG.sortCmdFontSize,
+                "dominant-baseline": "middle",
+                "text-anchor": "middle",
+            });
+            sortCmd.innerHTML = "Sort";
+            document.getElementById(SVG_ID).appendChild(sortCmd);
+            sortCmdAnimation = {
+                targets:"#"+getSortTextId(indLeft, indRight),
+                opacity: 1,
+                duration: ANIMATE_CONFIG.drawSortCmdDuration,
+                easing: "easeInCubic"
+            };
+            TIME_LINE = TIME_LINE.add(sortCmdAnimation);            
+        });
     }
+    animateDivide(0, 4, 7);
 
     //
     // 1. Clear the divide line rendered in animateDivide from the same call
