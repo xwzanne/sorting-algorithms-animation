@@ -13,8 +13,39 @@ function getDivideLineId(id){
     return 'divide-line-' + id.toString();
 }
 
-function getSortTextId(idL, idR){
-    return 'sort-text-' + idL.toString() + "-" + idR.toString();
+function getSortCmdId(idL, idR){
+    return 'sort-cmd-' + idL.toString() + "-" + idR.toString();
+}
+
+function getSortingTextId(idL, idR){
+    return 'sorting-text-' + idL.toString() + "-" + idR.toString();
+}
+
+function getSortingArrowLineLeftId(idL, idR){
+    return 'sorting-arrow-line-left-' + idL.toString() + "-" + idR.toString();
+}
+
+function getSortingArrowLineRightId(idL, idR){
+    return 'sorting-arrow-line-right-' + idL.toString() + "-" + idR.toString();
+}
+
+function getMergeCmdId(id){
+    return 'merge-cmd-' + id;
+}
+
+function removeAnimeTarget(anim){
+    anim.animatables.forEach(function(value, index){
+        value.target.remove();
+    });
+}
+
+function getRemoveAnimation(targets){
+    return {
+        targets:targets,
+        opacity: 0,
+        duration: 100,
+        complete: removeAnimeTarget
+    }
 }
 /**
  * NumberBoxToSort class.

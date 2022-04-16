@@ -7,6 +7,15 @@
 <div id="mainDiv" style="text-align:center; width:100%">
   <div style="height:500px;width:1000px;margin:auto;padding-top:100px;">
   <svg id='mainCanvas' height="500" width="800">
+    <defs>
+        <marker id='arrowhead' orient="auto"
+          markerWidth='3' markerHeight='4'
+          refX='0.1' refY='2'>
+          <path d='M0,0 V4 L3,2 Z' fill="#118811"/>
+        </marker>
+    </defs>
+    <!--<line x1="0" y1="50" x2="250" y2="50" stroke="#000" stroke-width="4" marker-end="url(#right-arrowhead)" />
+    <line id="test-arrow" x1="250" y1="80" x2="90" y2="80" stroke="#000" stroke-width="4" marker-end="url(#right-arrowhead)" />-->
   </svg>
   </div>
 </div>
@@ -45,7 +54,9 @@
             numberBoxAnchorY: numberBoxAnchorY,
             numberFontSize: Math.round(numberBoxWidth/2).toString() + "px",
             sortCmdFontSize: Math.round(numberBoxWidth/3).toString() + "px",
-            sortCmdAnchorY: sortCmdAnchorY
+            sortCmdAnchorY: sortCmdAnchorY,
+            gapBtSortingTextAndArrow: 5,
+            dxArrowHead: parseInt(document.getElementById("arrowhead").getAttribute("markerWidth")) + 12
         };
     })(parseInt(document.getElementById("mainCanvas").getAttribute("width")));
 
@@ -54,8 +65,14 @@
         const divideLineLength = document.getElementById(SVG_ID).getAttribute("height");
         return {
             divideLineLength: divideLineLength,
-            drawDivideLineDuration: 2000,
-            drawSortCmdDuration: 500
+            drawDivideLineDuration: 1500,
+            drawSortCmdDuration: 500,
+            drawMergeCmdDuration: 500,
+            sortCmdPersistTime: 1800,
+            mergeCmdPersistTime: 1800,
+            sortingTxtPersistTime: 1500,
+            drawArrowLineDuration: 500,
+            arrowLineAdvanceOffset: 400
         };
     })();
     // Init the svg canvas by drawing boxes of elements in NUM_VALUE_ARRAY
@@ -91,14 +108,94 @@
     NUMBER_BOX_ARR = initSVG("mainCanvas");
 
 
+    // get the left position X of the ind'th number box
+    // @param {Number} ind: the ind of the number box 
+    function getLeftPosXByInd(ind){
+        return LAYOUT_CONFIG.numberBoxGap/2 + parseInt(ind) * (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap);
+    }
+
     //
     // 1. Clear the "Sort" text rendered in animateDivide from last parent call, if any.
-    // 2. Fill background color of the range [lI, rI), indicating we are sorting this range.
+    // 2. Draw text "Sorting", expand arrow to the left and right range, indicating we are sorting this range.
     //    Persist for a while.
     // 3. Clear this animation.
     //
     function animateSorting(lI, rI){
-
+        // remove sort cmd
+        var sortTxtEle = document.getElementById(getSortCmdId(lI, rI));
+        if (sortTxtEle != null){
+            TIME_LINE = TIME_LINE.add(getRemoveAnimation("#"+getSortCmdId(lI, rI)));
+        }
+        // Draw sorting txt
+        const rangeLeft = getLeftPosXByInd(lI);
+        const rangeRight = getLeftPosXByInd(rI);
+        const textMidPosX = (rangeLeft + rangeRight)/2;
+        sortingTxt = getSVGElement("text", {
+            id: getSortingTextId(lI, rI), 
+            x: textMidPosX,
+            y: LAYOUT_CONFIG.sortCmdAnchorY,
+            style: "fill:#118811",
+            opacity: 0,
+            "font-size": LAYOUT_CONFIG.sortCmdFontSize,
+            "dominant-baseline": "middle",
+            "text-anchor": "middle",
+        });
+        sortingTxt.innerHTML = "Sorting";
+        document.getElementById(SVG_ID).appendChild(sortingTxt);
+        TIME_LINE = TIME_LINE.add({
+            targets:"#"+getSortingTextId(lI, rI),
+            opacity: 1,
+            duration: ANIMATE_CONFIG.drawSortCmdDuration,
+            easing: "easeInCubic"
+        });
+        // Draw arrow line
+        const initArrowLineLeftPosX = textMidPosX - sortingTxt.getBBox().width/2 - LAYOUT_CONFIG.gapBtSortingTextAndArrow;
+        arrowLineLeft = getSVGElement("line", {
+            id: getSortingArrowLineLeftId(lI, rI), 
+            x1: initArrowLineLeftPosX,
+            x2: initArrowLineLeftPosX,
+            y1: LAYOUT_CONFIG.sortCmdAnchorY,
+            y2: LAYOUT_CONFIG.sortCmdAnchorY,
+            stroke: "#118811",
+            opacity:0,
+            "stroke-width": 4,
+            "marker-end": "url(#arrowhead)"
+        });
+        document.getElementById(SVG_ID).appendChild(arrowLineLeft);
+        TIME_LINE = TIME_LINE.add({
+            targets:"#"+getSortingArrowLineLeftId(lI, rI),
+            x2: rangeLeft + LAYOUT_CONFIG.dxArrowHead,
+            opacity:1,
+            duration: ANIMATE_CONFIG.drawArrowLineDuration,
+            easing: "easeInCubic"
+        }, "-=" + ANIMATE_CONFIG.arrowLineAdvanceOffset);
+        const initArrowLineRightPosX = textMidPosX + sortingTxt.getBBox().width/2 + LAYOUT_CONFIG.gapBtSortingTextAndArrow;
+        arrowLineRight = getSVGElement("line", {
+            id: getSortingArrowLineRightId(lI, rI), 
+            x1: initArrowLineRightPosX,
+            x2: initArrowLineRightPosX,
+            y1: LAYOUT_CONFIG.sortCmdAnchorY,
+            y2: LAYOUT_CONFIG.sortCmdAnchorY,
+            stroke: "#118811",
+            opacity:0,
+            "stroke-width": 4,
+            "marker-end": "url(#arrowhead)"
+        });
+        document.getElementById(SVG_ID).appendChild(arrowLineRight);
+        console.log(LAYOUT_CONFIG.dxArrowHead);
+        TIME_LINE = TIME_LINE.add({
+            targets:"#"+getSortingArrowLineRightId(lI, rI),
+            x2: rangeRight - LAYOUT_CONFIG.dxArrowHead,
+            opacity:1,
+            duration: ANIMATE_CONFIG.drawSortCmdDuration,
+            easing: "easeInCubic"
+        }, '-='+ANIMATE_CONFIG.drawArrowLineDuration);
+        TIME_LINE.add({duration:ANIMATE_CONFIG.sortingTxtPersistTime})
+        // clear sorting text and arrow line
+        TIME_LINE = TIME_LINE.add(getRemoveAnimation(
+            ["#"+getSortingTextId(lI, rI),
+                "#"+getSortingArrowLineLeftId(lI, rI),
+                "#"+getSortingArrowLineRightId(lI, rI)]));
     }
     
     //
@@ -106,9 +203,12 @@
     // 2. Draw a "Sort" text above number box, in the range [lI, mid) and [mid, rI), respectively
     //
     function animateDivide(lI, mid, rI){
-        const linePosX = LAYOUT_CONFIG.numberBoxGap/2 + mid * (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap);
-        const rangeLeft = LAYOUT_CONFIG.numberBoxGap/2 + lI * (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap);
-        const rangeRight = LAYOUT_CONFIG.numberBoxGap/2 + rI * (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap);
+        // x position of the divide line
+        const linePosX = getLeftPosXByInd(mid);
+        // the left limit  of the current range (x pos of lI)
+        const rangeLeft = getLeftPosXByInd(lI);
+        // the right limit of the current range (x pos of rI)
+        const rangeRight = getLeftPosXByInd(rI);
         // divide line
         newDivideLine = getSVGElement("line", {
             id: getDivideLineId(mid.toString()),
@@ -133,7 +233,7 @@
         [[lI, mid, rangeLeft], [mid, rI, rangeRight]].forEach(function(value, index){
             [indLeft, indRight, rangePos] = value;
             sortCmd = getSVGElement("text", {
-                id: getSortTextId(indLeft, indRight), 
+                id: getSortCmdId(indLeft, indRight), 
                 x: (rangePos + linePosX)/2,
                 y: LAYOUT_CONFIG.sortCmdAnchorY,
                 style: "fill:#D68910",
@@ -145,30 +245,62 @@
             sortCmd.innerHTML = "Sort";
             document.getElementById(SVG_ID).appendChild(sortCmd);
             sortCmdAnimation = {
-                targets:"#"+getSortTextId(indLeft, indRight),
+                targets:"#"+getSortCmdId(indLeft, indRight),
                 opacity: 1,
                 duration: ANIMATE_CONFIG.drawSortCmdDuration,
                 easing: "easeInCubic"
             };
-            TIME_LINE = TIME_LINE.add(sortCmdAnimation);            
+            TIME_LINE = TIME_LINE.add(sortCmdAnimation);
         });
+        TIME_LINE = TIME_LINE.add({duration:ANIMATE_CONFIG.sortCmdPersistTime});
     }
-    animateDivide(0, 4, 7);
+
+    //
+    // This function is called only when rI-lI==1
+    // A single number box is already sorted by itself.
+    // No animateSorting will be called for this range.
+    // So we'll just clear the sort command.
+    //
+    function sortSingleNumberBox(lI, rI){
+        TIME_LINE = TIME_LINE.add(getRemoveAnimation("#"+getSortCmdId(lI, rI)));
+    }
 
     //
     // 1. Clear the divide line rendered in animateDivide from the same call
-    // 2. Draw a "merge" at position mid, above the number box, point 2 arrow to the left and right range
-    // 3. Clear the merge text and arrow in step 2
-    // 4. Render the merge. Put left and right range in parallel, merge them 1 by 1 by putting the smallest
-    //    of each range into the original slot.
+    // 2. Draw a "merge" at position mid, above the number box
+    // 3. Render the merge. Put left and right range in parallel, merge them 1 by 1 by putting the smallest
+    //    of each range into the original slot.\
+    // 4. Clear the merge text and arrow in step 2
     function animateMerge(lI, mid, rI){
-
+        TIME_LINE.add(getRemoveAnimation("#"+getDivideLineId(mid)));
+        const textMidPosX = getLeftPosXByInd(mid);
+        mergeCmdTxt = getSVGElement("text", {
+            id: getMergeCmdId(mid), 
+            x: textMidPosX,
+            y: LAYOUT_CONFIG.sortCmdAnchorY,
+            style: "fill:#1974d2",
+            opacity: 0,
+            "font-size": LAYOUT_CONFIG.sortCmdFontSize,
+            "dominant-baseline": "middle",
+            "text-anchor": "middle",
+        });
+        mergeCmdTxt.innerHTML = "Merge";
+        document.getElementById(SVG_ID).appendChild(mergeCmdTxt);
+        TIME_LINE = TIME_LINE.add({
+            targets:"#"+getMergeCmdId(mid),
+            opacity: 1,
+            duration: ANIMATE_CONFIG.drawMergeCmdDuration,
+            easing: "easeInCubic"
+        });
+        TIME_LINE = TIME_LINE.add({duration:ANIMATE_CONFIG.mergeCmdPersistTime});
+        TIME_LINE.add(getRemoveAnimation("#"+getMergeCmdId(mid)));
     }
 
     // @param {number} lI - left index of the element in sorting array.
-    // @param {number} rI - right index of the element in sorting array.
+    // @param {number} rI - right index of the element in sorting array, exclusive.
     function mergeSort(lI, rI){
         if (rI - lI <= 1){
+            sortSingleNumberBox(lI, rI);
             return;
         }
         const mid = Math.floor((lI + rI)/2);
@@ -178,6 +310,7 @@
         mergeSort(mid, rI);
         animateMerge(lI, mid, rI);
     }
+    mergeSort(0, 7);
   
 </script>
 </body>
