@@ -9,6 +9,10 @@ function getRectId(id){
     return 'number-rect-' + id.toString();
 }
 
+function getNumberBoxGroupId(id){
+    return 'number-box-g-' + id.toString();
+}
+
 function getDivideLineId(id){
     return 'divide-line-' + id.toString();
 }
@@ -56,9 +60,9 @@ function getRemoveAnimation(targets){
  * @param {Number} value  - Value in this node.
  */
 class NumberBoxToSort {
-    constructor(idx, svgNode, value) {
+    constructor(idx, value) {
         this.idx = parseInt(idx);
-        this.svgNode = svgNode;
         this.value = value;
+        this.domId = getNumberBoxGroupId(idx);
     }
 }

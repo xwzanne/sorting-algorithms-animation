@@ -14,8 +14,6 @@
           <path d='M0,0 V4 L3,2 Z' fill="#118811"/>
         </marker>
     </defs>
-    <!--<line x1="0" y1="50" x2="250" y2="50" stroke="#000" stroke-width="4" marker-end="url(#right-arrowhead)" />
-    <line id="test-arrow" x1="250" y1="80" x2="90" y2="80" stroke="#000" stroke-width="4" marker-end="url(#right-arrowhead)" />-->
   </svg>
   </div>
 </div>
@@ -72,7 +70,9 @@
             mergeCmdPersistTime: 1800,
             sortingTxtPersistTime: 1500,
             drawArrowLineDuration: 500,
-            arrowLineAdvanceOffset: 400
+            arrowLineAdvanceOffset: 400,
+            mergeSortSingleStepTime: 1000,
+            mergePersistTimeAfterShiftRight: 400
         };
     })();
     // Init the svg canvas by drawing boxes of elements in NUM_VALUE_ARRAY
@@ -81,7 +81,7 @@
     function initSVG(svgId){
         numberBoxToSort_arr = []
         NUM_VALUE_ARRAY.forEach(function (value, index) {
-            newGroup = getSVGElement("g", {id: 'number-box-g-' + index.toString()});
+            newGroup = getSVGElement("g", {id: getNumberBoxGroupId(index)});
             newRect = getSVGElement("rect", {
                 id: getRectId(index.toString()),
                 x: LAYOUT_CONFIG.numberBoxGap + index * (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap),
@@ -101,7 +101,7 @@
             newGroup.appendChild(newRect);
             newGroup.appendChild(newTxt);
             document.getElementById(svgId).appendChild(newGroup);
-            numberBoxToSort_arr.push(new NumberBoxToSort(index, newGroup, value));
+            numberBoxToSort_arr.push(new NumberBoxToSort(index, value));
         });
         return numberBoxToSort_arr;
     }
@@ -182,7 +182,6 @@
             "marker-end": "url(#arrowhead)"
         });
         document.getElementById(SVG_ID).appendChild(arrowLineRight);
-        console.log(LAYOUT_CONFIG.dxArrowHead);
         TIME_LINE = TIME_LINE.add({
             targets:"#"+getSortingArrowLineRightId(lI, rI),
             x2: rangeRight - LAYOUT_CONFIG.dxArrowHead,
@@ -294,6 +293,79 @@
         });
         TIME_LINE = TIME_LINE.add({duration:ANIMATE_CONFIG.mergeCmdPersistTime});
         TIME_LINE.add(getRemoveAnimation("#"+getMergeCmdId(mid)));
+        //
+        // The actual merge sort animation
+        //
+        leftNumberBoxTargetIds = [];
+        NUMBER_BOX_ARR.slice(lI, mid).forEach(function (value, index) {
+            leftNumberBoxTargetIds.push("#"+value.domId);
+        });
+        rightNumberBoxTargetIds = [];
+        NUMBER_BOX_ARR.slice(mid, rI).forEach(function (value, index) {
+            rightNumberBoxTargetIds.push("#"+value.domId);
+        });
+        // move leftNumberBox up
+        TIME_LINE = TIME_LINE.add({
+            targets:leftNumberBoxTargetIds,
+            translateY: "-=" + (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap).toString(),
+            duration: ANIMATE_CONFIG.mergeSortSingleStepTime,
+            easing: "easeInCubic"
+        });
+        // move rightNumberBox down
+        TIME_LINE = TIME_LINE.add({
+            targets:rightNumberBoxTargetIds,
+            translateY: "+=" + (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap).toString(),
+            translateX: "-=" + ((mid-lI)*(LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap)).toString(),
+            duration: ANIMATE_CONFIG.mergeSortSingleStepTime,
+            easing: "easeInCubic"
+        }, '-='+ANIMATE_CONFIG.mergeSortSingleStepTime.toString());
+        leftNumberBox = JSON.parse(JSON.stringify(NUMBER_BOX_ARR.slice(lI, mid)));
+        rightNumberBox = JSON.parse(JSON.stringify(NUMBER_BOX_ARR.slice(mid, rI)));
+        var [curLeftId, curRightId, curTargetId] = [0, 0, lI];
+        while (curLeftId < leftNumberBox.length || curRightId < rightNumberBox.length){
+            TIME_LINE = TIME_LINE.add({duration:ANIMATE_CONFIG.mergePersistTimeAfterShiftRight});
+            let movedRight = false;
+            // move the right Number Box
+            if((curLeftId == leftNumberBox.length) || 
+                ((curRightId < rightNumberBox.length) && (leftNumberBox[curLeftId].value > rightNumberBox[curRightId].value))){
+                TIME_LINE = TIME_LINE.add({
+                    targets:"#"+rightNumberBox[curRightId].domId,
+                    translateY: "-=" + (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap).toString(),
+                    duration: ANIMATE_CONFIG.mergeSortSingleStepTime,
+                    easing: "easeInCubic"
+                });
+                NUMBER_BOX_ARR[curTargetId++] = rightNumberBox[curRightId++];
+                movedRight = true;
+            } else { // move the left Number Box
+                TIME_LINE = TIME_LINE.add({
+                    targets:"#"+leftNumberBox[curLeftId].domId,
+                    translateY: "+=" + (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap).toString(),
+                    duration: ANIMATE_CONFIG.mergeSortSingleStepTime,
+                    easing: "easeInCubic"
+                });
+                NUMBER_BOX_ARR[curTargetId++] = leftNumberBox[curLeftId++];
+            }
+            let shiftRightIds = []
+            if (movedRight && curLeftId < leftNumberBox.length) {
+                leftNumberBox.slice(curLeftId).forEach(function (value, index) {
+                    shiftRightIds.push("#"+value.domId);
+                });
+            }
+            if (!movedRight && curRightId < rightNumberBox.length) {
+                rightNumberBox.slice(curRightId).forEach(function (value, index) {
+                    shiftRightIds.push("#"+value.domId);
+                });
+            }
+            if (shiftRightIds.length > 0){
+                TIME_LINE = TIME_LINE.add({
+                    targets: shiftRightIds,
+                    translateX: "+=" + (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap).toString(),
+                    duration: ANIMATE_CONFIG.mergeSortSingleStepTime,
+                    easing: "easeInCubic"
+                });
+            }
+        }
+        // End of the actual merge sort animation
     }
 
     // @param {number} lI - left index of the element in sorting array.

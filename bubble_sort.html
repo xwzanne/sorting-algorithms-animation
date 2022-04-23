@@ -53,8 +53,6 @@
       swapDY: (LAYOUT_CONFIG.numberBoxWidth + LAYOUT_CONFIG.numberBoxGap) / 2
     };
   })();
-  console.log(LAYOUT_CONFIG);
-  console.log(ANIMATE_CONFIG);
 
 
   // Init the svg canvas by drawing boxes of elements in NUM_VALUE_ARRAY
@@ -83,12 +81,11 @@
       newGroup.appendChild(newRect);
       newGroup.appendChild(newTxt);
       document.getElementById(svgId).appendChild(newGroup);
-      numberBoxToSort_arr.push(new NumberBoxToSort(index, newGroup, value));
+      numberBoxToSort_arr.push(new NumberBoxToSort(index, value));
     });
     return numberBoxToSort_arr;
   }
   NUMBER_BOX_ARR = initSVG("mainCanvas");
-  console.log(NUMBER_BOX_ARR);
   
   // swap 2 number box
   // @param {String} gidLeft - the id of g node on the left
@@ -171,8 +168,8 @@
         TIME_LINE = TIME_LINE.add(rectAnimation_1).add(rectAnimation_2);
       if(NUMBER_BOX_ARR[j].value > NUMBER_BOX_ARR[j+1].value){
         [swapAnimationLeft, swapAnimationRight] = swapNeighbor(
-          "#" + NUMBER_BOX_ARR[j].svgNode.getAttribute("id"),
-          "#" + NUMBER_BOX_ARR[j+1].svgNode.getAttribute("id"),
+          "#" + NUMBER_BOX_ARR[j].domId,
+          "#" + NUMBER_BOX_ARR[j+1].domId,
           ANIMATE_CONFIG.swapDX, ANIMATE_CONFIG.swapDY, ANIMATE_CONFIG.swapDuration);
         const numBoxTmp = NUMBER_BOX_ARR[j];
         NUMBER_BOX_ARR[j] = NUMBER_BOX_ARR[j+1];
