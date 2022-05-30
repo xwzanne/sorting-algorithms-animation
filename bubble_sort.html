@@ -9,6 +9,13 @@
   <svg id='mainCanvas' height="500" width="800">
     <!--<image width="200" height="200" href="./green_check.svg"></image>-->
   </svg>
+  <!-- Please comment out the div below if you don't want the button functionality-->
+  <div class="timeline-controls-demo">
+    <button class="play">PLAY</button>
+    <button class="pause">PAUSE</button>
+    <button class="restart">RESTART</button>
+    <!--<input class="progress" step=".001" type="range" min="0" max="100" value="0">-->
+  </div>
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
@@ -178,6 +185,12 @@
       }
     }
   }
+
+  // Please comment out the code block below if you don't want the play/pause button functionality
+  document.querySelector('.timeline-controls-demo .play').onclick = TIME_LINE.play;
+  document.querySelector('.timeline-controls-demo .pause').onclick = TIME_LINE.pause;
+  document.querySelector('.timeline-controls-demo .restart').onclick = TIME_LINE.restart;
+
   
 </script>
 </body>

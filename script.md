@@ -1,0 +1,15 @@
+
+## Introduction
+In computer science, an algorithm is a finite sequence of well-defined instructions used to solve a specific problem. Here, the sorting algorithm, as its name indicate, is an algorithm intending to solve the problem of sorting. In the problem of sorting, given a sequence of any random-ordered numbers, our goal is to sort all the numbers either increasingly or decreasingly. 
+
+Now to be precise, the sorting algorithm is not a single algorithm. They are actually a family of algorithms that has many variants, meaning we can sort the number sequence in many different ways. Today we'll learn the 2 most popular sorting algorithm as you can see in any computer science textbook. Bubble sort and merge sort.
+
+In today's example, we assume our goal is to sort the sequence by increasing order. Later you'll find it's very easy to change the algorithm to let it sort by decreasing order.
+
+
+## Bubble Sort
+In bubble sort, the computer checks each adjacent pair from left to right. If in a pair the left is smaller (or equal) than the right, which means it's already in increasing order, as shown in green color, the computer does nothing. On the other hand, if in a pair, the left is greater than the right (shown as red pair), it swaps the pair, so the bigger one can be moved to the right. After checking each pair from the beginning to the end, it's not hard to see that the biggest number in this sequence will be shuffled to the rightmost position, just like a bubble pops up to the surface from the bottom of water. The procedure that traverses the sequence from left-to right: we call this an iteration. Now if we repeat this iteration the 2nd time, the 2nd biggest number will be moved to the 2nd right-most position. Therefore, to sort all the numbers, let's say if we have N numbers to sort, we'll just need to repeat this iteration N times.
+
+
+# Merge Sort
+The merge sort algorithm is very different than bubble sort, as it employs the idea of divide-and-conquer in computer science. The algorithm goes like this. Our goal is to sort a whole sequence of numbers. But instead directly sorting them, we divide the sequence into 2 parts, and ask each part to sort itself. And how do we sort each part? Again, we divide them into 2 parts, and ask each part to sort itself.. until each part becomes a single element that can't be further divided. So now, if we have 2 parts already sorted, we do the merge. Merging 2 already sorted sequence is pretty straight-forward. Here in the animation, we put the 2 sorted sequence on the top and the bottom, and only compare their smallest element in the left. Whichever is smaller can go to the merged sequence first, then the rest will do the same. In this way, every divided part can be sorted, and if we have 2 divided part sorted, we'll keep merging them, until the whole sequence is sorted.

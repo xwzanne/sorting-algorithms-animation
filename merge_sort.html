@@ -15,6 +15,13 @@
         </marker>
     </defs>
   </svg>
+  <!-- Please comment out the div below if you don't want the button functionality-->
+  <div class="timeline-controls-demo">
+    <button class="play">PLAY</button>
+    <button class="pause">PAUSE</button>
+    <button class="restart">RESTART</button>
+    <!--<input class="progress" step=".001" type="range" min="0" max="100" value="0">-->
+  </div>
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
@@ -383,7 +390,11 @@
         animateMerge(lI, mid, rI);
     }
     mergeSort(0, 7);
-  
+
+    // Please comment out the code block below if you don't want the play/pause button functionality
+    document.querySelector('.timeline-controls-demo .play').onclick = TIME_LINE.play;
+    document.querySelector('.timeline-controls-demo .pause').onclick = TIME_LINE.pause;
+    document.querySelector('.timeline-controls-demo .restart').onclick = TIME_LINE.restart;
 </script>
 </body>
 </html>
