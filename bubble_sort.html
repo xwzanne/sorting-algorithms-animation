@@ -7,7 +7,11 @@
 <div id="mainDiv" style="text-align:center; width:100%">
   <div style="height:500px;width:1000px;margin:auto;padding-top:100px;">
   <svg id='mainCanvas' height="500" width="800">
+    <style>
+      #iter-text { font-size: 23px }
+    </style>
     <!--<image width="200" height="200" href="./green_check.svg"></image>-->
+    <text x="680" y="30" id='iter-text'>Iteration 1</text>
   </svg>
   <!-- Please comment out the div below if you don't want the button functionality-->
   <div class="timeline-controls-demo">
@@ -75,7 +79,8 @@
           y: LAYOUT_CONFIG.numberBoxAnchorY,
           width: LAYOUT_CONFIG.numberBoxWidth,
           height: LAYOUT_CONFIG.numberBoxWidth,
-          style: "fill:rgb(255,255,255);stroke-width:" + LAYOUT_CONFIG.numberBoxBorderWidth.toString() + ";stroke:rgb(0,0,0)"
+          fill: "#FFFFFF",
+          style: "stroke-width:" + LAYOUT_CONFIG.numberBoxBorderWidth.toString() + ";stroke:rgb(0,0,0)"
       });
       newTxt = getSVGElement("text", {
         x: parseInt(newRect.getAttribute('x')) + LAYOUT_CONFIG.numberBoxWidth / 2,
@@ -142,7 +147,7 @@
       targets: gidRight,
       easing: 'easeInOutSine',
       translateX: positionRight.map(p => ({value: p.x, duration})),
-      translateY: positionRight.map(p => ({value: p.y, duration})),
+      translateY: positionRight.map(p => ({value: p.y, duration}))
     }];
   }
   
@@ -162,6 +167,28 @@
       stroke: "#000000",
       duration: ANIMATE_CONFIG.borderDuration
     }];
+  }
+
+  var IterObj = {iteration: 1};
+  // animation when iteration ends
+  function updateIteration(){
+    return {
+      targets: IterObj,
+      iteration: "+=1",
+      easing: 'linear',
+      complete: function() {
+        document.querySelector("#iter-text").innerHTML = "Iteration " + IterObj["iteration"];
+      }
+    };
+  }
+
+  function colorLastNumberBox(targetId){
+    return {
+      targets: targetId,
+      complete: function() {
+        document.querySelector(targetId).setAttribute("fill","#32CD32");
+      }
+    };
   }
 
   // Run the bubble sort algo on 'NUMBER_BOX_ARR', adding timeline accordingly
@@ -184,6 +211,8 @@
         TIME_LINE = TIME_LINE.add(swapAnimationLeft).add(swapAnimationRight, offsetStr);
       }
     }
+    TIME_LINE = TIME_LINE.add(colorLastNumberBox("#"+getRectId(NUMBER_BOX_ARR[i].idx)));
+    TIME_LINE = TIME_LINE.add(updateIteration());
   }
 
   // Please comment out the code block below if you don't want the play/pause button functionality
